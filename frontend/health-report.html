@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthPulse | AI Health Report</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #f3f7fb;
+      color: #1c2b3a;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: auto;
+    }
+
+    .header {
+      background: #103b56;
+      color: white;
+      padding: 26px;
+      border-radius: 16px;
+      margin-bottom: 22px;
+    }
+
+    .header h1 {
+      margin-top: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 18px #152c4010;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 7px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccd7e0;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .check input {
+      width: auto;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      background: #087e8b;
+      color: white;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .result {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .notice {
+      color: #586777;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>HealthPulse</h1>
+      <p>AI Health Report Explainer</p>
+      <p>Understand your health measurements in simple language.</p>
+    </header>
+
+    <section class="card">
+      <h2>Enter Your Health Details</h2>
+      <p class="notice">
+        Enter the measurements you know. Use the units requested below.
+        Do not enter personal identifiers.
+      </p>
+
+      <form id="reportForm">
+        <div class="grid">
+          <div>
+            <label for="age">Age (18–120 years)</label>
+            <input id="age" type="number" min="18" max="120"
+                   required value="25">
+          </div>
+
+          <div>
+            <label for="sex">Sex</label>
+            <select id="sex" required>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / prefer not to specify</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="systolic">Systolic BP (mmHg)</label>
+            <input id="systolic" type="number" min="50" max="300"
+                   placeholder="e.g. 120">
+          </div>
+
+          <div>
+            <label for="diastolic">Diastolic BP (mmHg)</label>
+            <input id="diastolic" type="number" min="30" max="200"
+                   placeholder="e.g. 80">
+          </div>
+
+          <div>
+            <label for="cholesterol">Total Cholesterol (mg/dL)</label>
+            <input id="cholesterol" type="number" min="50" max="600"
+                   placeholder="e.g. 190">
+          </div>
+
+          <div>
+            <label for="glucose">Blood Glucose (mg/dL)</label>
+            <input id="glucose" type="number" min="20" max="800"
+                   placeholder="e.g. 95">
+          </div>
+
+          <div>
+            <label for="bmi">BMI</label>
+            <input id="bmi" type="number" min="10" max="80"
+                   step="0.1" placeholder="e.g. 24.5">
+          </div>
+        </div>
+
+        <div class="check">
+          <input id="smoking" type="checkbox">
+          <label for="smoking">I currently smoke</label>
+        </div>
+
+        <div class="check">
+          <input id="diabetes" type="checkbox">
+          <label for="diabetes">I have been diagnosed with diabetes</label>
+        </div>
+
+        <button id="submitBtn" type="submit">
+          Explain My Health Report
+        </button>
+      </form>
+    </section>
+
+    <section id="resultCard" class="card hidden" aria-live="polite">
+      <h2>AI Explanation</h2>
+      <p id="status"></p>
+      <div id="result" class="result"></div>
+      <p class="notice">
+        Educational information only, not a diagnosis or a substitute
+        for advice from a qualified healthcare professional.
+      </p>
+    </section>
+
+    <p class="notice">
+      HealthPulse is an educational project. Do not use it for emergencies
+      or to make medication decisions. Seek urgent medical help for severe
+      chest pain, serious breathing difficulty, or possible stroke symptoms.
+    </p>
+  </main>
+
+  <script>
+    const form = document.getElementById("reportForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultCard = document.getElementById("resultCard");
+    const resultBox = document.getElementById("result");
+    const statusBox = document.getElementById("status");
+
+    function optionalNumber(id) {
+      const value = document.getElementById(id).value.trim();
+      return value === "" ? null : Number(value);
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const systolic = optionalNumber("systolic");
+      const diastolic = optionalNumber("diastolic");
+
+      if ((systolic === null) !== (diastolic === null)) {
+        alert("Enter both systolic and diastolic BP, or leave both blank.");
+        return;
+      }
+
+      const data = {
+        age: Number(document.getElementById("age").value),
+        sex: document.getElementById("sex").value,
+        systolic_bp: systolic,
+        diastolic_bp: diastolic,
+        total_cholesterol: optionalNumber("cholesterol"),
+        blood_glucose: optionalNumber("glucose"),
+        bmi: optionalNumber("bmi"),
+        smoking: document.getElementById("smoking").checked,
+        diabetes: document.getElementById("diabetes").checked
+      };
+
+      resultCard.classList.remove("hidden");
+      resultBox.textContent = "";
+      statusBox.textContent = "Generating your explanation...";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Please wait...";
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/ai-report-explainer",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+          }
+        );
+
+        const body = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            body.detail || "The report could not be explained."
+          );
+        }
+
+        statusBox.textContent = "Explanation generated successfully.";
+        resultBox.textContent = body.explanation;
+      } catch (error) {
+        statusBox.textContent = "Unable to generate the explanation.";
+        resultBox.textContent =
+          error.message +
+          "\n\nCheck that the FastAPI server is running and the backend terminal has no errors.";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Explain My Health Report";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthPulse | Health Age Checker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #f2f7fb;
+      color: #193047;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    header {
+      padding: 26px;
+      color: white;
+      background: #123d56;
+      border-radius: 16px;
+      margin-bottom: 22px;
+    }
+
+    header h1 {
+      margin-top: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 24px;
+      margin-bottom: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px #142f4510;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccd7e0;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    .check input {
+      width: auto;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 22px;
+      border: 0;
+      border-radius: 9px;
+      color: white;
+      background: #087e8b;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .result-number {
+      font-size: 42px;
+      font-weight: bold;
+      color: #087e8b;
+      margin: 12px 0;
+    }
+
+    li {
+      margin-bottom: 9px;
+      line-height: 1.5;
+    }
+
+    .notice {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #586777;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <header>
+      <h1>HealthPulse</h1>
+      <p>Health Age Checker</p>
+      <p>Explore how selected health indicators affect a simple demo score.</p>
+    </header>
+
+    <section class="card">
+      <h2>Enter Your Details</h2>
+
+      <p class="notice">
+        Enter your current measurements if available.
+        Cholesterol and glucose should be in mg/dL and blood pressure in mmHg.
+      </p>
+
+      <form id="ageForm">
+        <div class="grid">
+          <div>
+            <label for="age">Chronological Age (years)</label>
+            <input id="age" type="number" min="18" max="100"
+                   value="25" required>
+          </div>
+
+          <div>
+            <label for="bmi">BMI</label>
+            <input id="bmi" type="number" min="10" max="80"
+                   step="0.1" placeholder="e.g. 24.5" required>
+          </div>
+
+          <div>
+            <label for="bp">Systolic Blood Pressure (mmHg)</label>
+            <input id="bp" type="number" min="50" max="300"
+                   placeholder="Optional">
+          </div>
+
+          <div>
+            <label for="cholesterol">Total Cholesterol (mg/dL)</label>
+            <input id="cholesterol" type="number" min="50" max="600"
+                   placeholder="Optional">
+          </div>
+
+          <div>
+            <label for="glucose">Blood Glucose (mg/dL)</label>
+            <input id="glucose" type="number" min="20" max="800"
+                   placeholder="Optional">
+          </div>
+        </div>
+
+        <div class="check">
+          <input id="smoking" type="checkbox">
+          <label for="smoking">I currently smoke</label>
+        </div>
+
+        <button id="submitBtn" type="submit">
+          Calculate Demo Indicator
+        </button>
+      </form>
+    </section>
+
+    <section id="resultCard" class="card hidden" aria-live="polite">
+      <h2>Your Demo Result</h2>
+      <p id="status"></p>
+
+      <p>Chronological age</p>
+      <div id="actualAge" class="result-number"></div>
+
+      <p>Rule-based demo indicator</p>
+      <div id="indicatorAge" class="result-number"></div>
+
+      <h3>Factors considered</h3>
+      <ul id="factors"></ul>
+
+      <p id="method" class="notice"></p>
+      <p id="disclaimer" class="notice"></p>
+    </section>
+
+    <p class="notice">
+      This is a simple educational demonstration, not a scientifically
+      validated biological-age estimate, diagnosis, or lifespan prediction.
+      Do not change medication or treatment based on this result.
+      Consult a qualified healthcare professional for medical advice.
+    </p>
+  </main>
+
+  <script>
+    const form = document.getElementById("ageForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const resultCard = document.getElementById("resultCard");
+
+    function optionalNumber(id) {
+      const value = document.getElementById(id).value.trim();
+      return value === "" ? null : Number(value);
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const data = {
+        age: Number(document.getElementById("age").value),
+        bmi: Number(document.getElementById("bmi").value),
+        systolic_bp: optionalNumber("bp"),
+        total_cholesterol: optionalNumber("cholesterol"),
+        blood_glucose: optionalNumber("glucose"),
+        smoking: document.getElementById("smoking").checked
+      };
+
+      resultCard.classList.remove("hidden");
+      document.getElementById("status").textContent =
+        "Calculating your demo indicator...";
+      document.getElementById("factors").replaceChildren();
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Please wait...";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/health-age", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+
+        const body = await response.json();
+
+        if (!response.ok) {
+          throw new Error(body.detail || "Could not calculate the indicator.");
+        }
+
+        document.getElementById("status").textContent =
+          "Result generated successfully.";
+
+        document.getElementById("actualAge").textContent =
+          body.chronological_age + " years";
+
+        document.getElementById("indicatorAge").textContent =
+          body.demo_health_age_indicator + " years";
+
+        body.factors.forEach(function (factor) {
+          const item = document.createElement("li");
+          item.textContent = factor;
+          document.getElementById("factors").appendChild(item);
+        });
+
+        document.getElementById("method").textContent =
+          "Method: " + body.method;
+
+        document.getElementById("disclaimer").textContent =
+          body.disclaimer;
+
+      } catch (error) {
+        document.getElementById("status").textContent =
+          "Unable to calculate the indicator.";
+
+        document.getElementById("indicatorAge").textContent = "—";
+
+        document.getElementById("method").textContent = error.message;
+        document.getElementById("disclaimer").textContent =
+          "Check that the FastAPI server is running.";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Calculate Demo Indicator";
+      }
+    });
+  </script>
+</body>
+</html>
